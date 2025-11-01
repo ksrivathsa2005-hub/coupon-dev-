@@ -3,13 +3,13 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import AdminPage from './pages/AdminPage'
 import StaffPage from './pages/StaffPage'
-// import Navbar from './components/Navbar' 
+import Navbar from './components/Navbar' 
 // import Footer from './components/Footer'
 
 function App() {
   return (
     <div className="d-flex flex-column min-vh-100"> {}
-      {/* <Navbar /> */} 
+      <Navbar /> 
 
       <main className="flex-grow-1">
         <Routes>
