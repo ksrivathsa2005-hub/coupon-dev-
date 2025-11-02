@@ -1,5 +1,7 @@
 import React from 'react';
 import { Button, Container } from 'react-bootstrap';
+import colors from '../assets/constants/colors';
+
 import { 
   CheckCircleFill, 
   ExclamationTriangleFill, 
@@ -26,19 +28,19 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
   switch (result.status) {
     case 'success':
       IconComponent = CheckCircleFill;
-      iconColor = 'var(--bs-success)'; //Green
-      backgroundColor = '#f0fff4'; //light green
+      iconColor = colors.success.main;
+      backgroundColor = colors.success.background;
       break;
     case 'warning':
       IconComponent = ExclamationTriangleFill;
-      iconColor = 'var(--bs-warning)'; //yellow
-      backgroundColor = '#fffbeb'; //Light yellow
+      iconColor = colors.warning.main;
+      backgroundColor = colors.warning.background;
       break;
     case 'error':
     default:
       IconComponent = XCircleFill;
-      iconColor = 'var(--bs-danger)'; //red
-      backgroundColor = '#fff5f5'; //Light red
+      iconColor = colors.error.main;
+      backgroundColor = colors.error.background;
       break;
   }
 
