@@ -6,13 +6,10 @@ import StaffPage from './pages/StaffPage'
 import Navbar from './components/Navbar' 
 // import Footer from './components/Footer'
 
-{/* import { useAuth } from './context/AuthContext'; */}
-
 function App() {
-  {/*const { user } = useAuth();*/}
   return (
     <div className="d-flex flex-column min-vh-100"> {}
-      <Navbar /* user={user} */ /> 
+      <Navbar /> 
 
       <main className="flex-grow-1">
         <Routes>
@@ -21,6 +18,7 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/staff" element={<StaffPage />} />
           
+          {/* Default route: redirect to login */}
           <Route path="/" element={<LoginPage />} /> 
         </Routes>
       </main>
