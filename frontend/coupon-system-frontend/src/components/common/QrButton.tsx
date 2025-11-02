@@ -24,3 +24,15 @@ const QrButton: React.FC<QrButtonProps> = ({ text, onClick }) => {
 };
 
 export default QrButton;
+
+{/*
+  To use this button
+  
+  import QrButton from './common/QrButton';
+
+  <QrButton 
+            text="Get My QR Code" 
+            onClick={() => onGetQR(event.id)} 
+          />
+          
+*/}
