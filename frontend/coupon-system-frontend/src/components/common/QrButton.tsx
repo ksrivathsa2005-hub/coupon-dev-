@@ -26,7 +26,7 @@ const QrButton: React.FC<QrButtonProps> = ({ text, onClick }) => {
 export default QrButton;
 
 {/*
-  To use this button
+  To use this button component
   
   import QrButton from './common/QrButton';
 

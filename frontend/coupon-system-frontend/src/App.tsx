@@ -4,7 +4,7 @@ import DashboardPage from './pages/DashboardPage'
 import AdminPage from './pages/AdminPage'
 import StaffPage from './pages/StaffPage'
 import Navbar from './components/Navbar' 
-// import Footer from './components/Footer'
+import Footer from './components/Footer'
 
 function App() {
   return (
@@ -18,12 +18,11 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/staff" element={<StaffPage />} />
           
-          {/* Default route: redirect to login */}
           <Route path="/" element={<LoginPage />} /> 
         </Routes>
       </main>
 
-      {/* <Footer /> */} 
+      <Footer /> 
     </div>
   )
 }
