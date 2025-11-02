@@ -6,6 +6,9 @@ import StaffPage from './pages/StaffPage'
 import Navbar from './components/Navbar' 
 // import Footer from './components/Footer'
 
+// 1. Import your new test page
+import TestEventPage from './pages/TestEventPage' // <-- Adjust path if needed
+
 {/* import { useAuth } from './context/AuthContext'; */}
 
 function App() {
@@ -21,6 +24,9 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/staff" element={<StaffPage />} />
           
+          {/* 2. Add the new route for your test page */}
+          <Route path="/test" element={<TestEventPage />} />
+
           <Route path="/" element={<LoginPage />} /> 
         </Routes>
       </main>
