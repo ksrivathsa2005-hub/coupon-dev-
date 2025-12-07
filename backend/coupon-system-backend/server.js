@@ -27,5 +27,5 @@ app.get('/', (req, res) => {
 
 // Start Server
 app.listen(PORT, () => {
-    console.log(`✅ SUCCESS! Server running on port ${PORT}`);
+    console.log(` SUCCESS! Server running on port ${PORT}`);
 });
