@@ -76,7 +76,7 @@ const DashboardPage: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          student_id: 1, 
+          student_id: 1, // HARDCODED for now
           event_id: parseInt(eventId)
         })
       });
@@ -84,10 +84,16 @@ const DashboardPage: React.FC = () => {
       const result = await response.json();
 
       if (!response.ok) {
-        alert(result.error || "Registration failed");
+        // Special check: If backend says it's already redeemed
+        if (result.isRedeemed) {
+            alert("❌ Access Denied: This coupon has already been used.");
+        } else {
+            alert(result.error || "Registration failed");
+        }
         return;
       }
 
+      // If success (200 or 201), show the QR code
       setQrToken(result.data.qr_token);
       setShowModal(true);
 
@@ -96,6 +102,7 @@ const DashboardPage: React.FC = () => {
       alert("Something went wrong connecting to the server.");
     }
   };
+  
 
   const handleCloseModal = () => {
     setShowModal(false);

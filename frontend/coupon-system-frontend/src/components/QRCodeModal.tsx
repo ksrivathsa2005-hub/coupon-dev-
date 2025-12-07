@@ -13,7 +13,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ show, onHide, eventName, qrTo
   return (
     <Modal show={show} onHide={onHide} centered>
       <Modal.Header closeButton>
-        <Modal.Title>Your Entry Pass</Modal.Title>
+        <Modal.Title>Your Coupon</Modal.Title>
       </Modal.Header>
       
       <Modal.Body className="text-center p-4">
@@ -30,12 +30,11 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ show, onHide, eventName, qrTo
         </div>
         
         <p className="mt-4 text-muted small">
-          Show this QR code at the counter.<br/>
           This is valid for one-time use only.
         </p>
         
         <div className="mt-3 p-2 bg-light rounded text-monospace" style={{ fontSize: '0.8rem' }}>
-          Token: {qrToken.slice(0, 8)}...
+          Show this QR code at the counter.
         </div>
       </Modal.Body>
       

@@ -11,16 +11,33 @@ router.post('/', async (req, res) => {
     const { student_id, event_id } = req.body;
 
     try {
-        // A. Check Double Booking
+        // A. Check if Registration Exists
         const check = await db.query(
             'SELECT * FROM registrations WHERE student_id = $1 AND event_id = $2',
             [student_id, event_id]
         );
-        if (check.rows.length > 0) {
-            return res.status(400).json({ error: "Student already registered" });
-        }
 
-        // B. Find ANY valid slot for this event
+        // --- NEW LOGIC START ---
+        if (check.rows.length > 0) {
+            const existingReg = check.rows[0];
+
+            // If they already ate, DO NOT show the QR again
+            if (existingReg.status === 'served') {
+                return res.status(400).json({ 
+                    error: "Coupon already redeemed. You have been served.",
+                    isRedeemed: true 
+                });
+            }
+
+            // If they are registered but haven't eaten, SHOW the existing QR
+            return res.status(200).json({
+                message: "Existing registration retrieved",
+                data: existingReg 
+            });
+        }
+        // --- NEW LOGIC END ---
+
+        // B. Find ANY valid slot for this event (No changes below)
         const slots = await db.query(
             'SELECT slot_id FROM event_slots WHERE event_id = $1',
             [event_id]
@@ -30,7 +47,7 @@ router.post('/', async (req, res) => {
             return res.status(404).json({ error: "No slots defined. Admin must add a slot first." });
         }
 
-        // C. Randomly pick one slot (Satisfies DB requirement)
+        // C. Randomly pick one slot
         const randomSlot = slots.rows[Math.floor(Math.random() * slots.rows.length)];
         
         // D. Create Registration
