@@ -1,16 +1,31 @@
-const express=require("express");
-const dotenv=require("dotenv");
-const cors=require("cors");
-const schemaCreateRoute=require("./routes/schema.create.route");
-dotenv.config();
+// server.js
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
 
-const app=express();
-const port=process.env.PORT || 3000;
-//curl http://localhost:3000/api/schema/create-schema -X POST
+const app = express();
+const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use("/api/schema",schemaCreateRoute);
-app.listen(port,()=>{
-    console.log(`server is running on port ${port}`);
+
+// Import Routes
+const eventRoutes = require('./routes/events');
+const userRoutes = require('./routes/users');
+const registrationRoutes = require('./routes/registrations');
+
+// Use Routes
+app.use('/events', eventRoutes);
+app.use('/users', userRoutes);
+app.use('/registrations', registrationRoutes);
+
+// Health Check
+app.get('/', (req, res) => {
+    res.json({ message: "Mess Coupon System API is running" });
+});
+
+// Start Server
+app.listen(PORT, () => {
+    console.log(`✅ SUCCESS! Server running on port ${PORT}`);
 });
