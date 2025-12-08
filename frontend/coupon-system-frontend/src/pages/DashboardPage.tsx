@@ -55,7 +55,7 @@ const DashboardPage: React.FC = () => {
         // If the backend sends slot info, set it here.
         // For now, it stays null, so the box won't show.
         // Uncomment the line below to test "showing" the slot:
-        // setUserSlot({ batch: "2022 (Seniors)", floor: "1st Floor", time: "2:00 PM - 2:45 PM" });
+        //setUserSlot({ batch: "2022 (Seniors)", floor: "1st Floor", time: "2:00 PM - 2:45 PM" });
 
       } catch (err) {
         console.error(err);
@@ -86,7 +86,7 @@ const DashboardPage: React.FC = () => {
       if (!response.ok) {
         // Special check: If backend says it's already redeemed
         if (result.isRedeemed) {
-            alert("❌ Access Denied: This coupon has already been used.");
+            alert(" Access Denied: This coupon has already been used.");
         } else {
             alert(result.error || "Registration failed");
         }
