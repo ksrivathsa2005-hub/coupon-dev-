@@ -1,4 +1,9 @@
 import React, { useState } from "react";
+import { GoogleLogin } from '@react-oauth/google';
+import type { CredentialResponse } from '@react-oauth/google'; // Added "type"
+
+import { useAuth } from '../context/AuthContext'; 
+import { useNavigate } from 'react-router-dom';
 
 type StaffCreds = { username: string; password: string; remember?: boolean };
 
@@ -68,10 +73,7 @@ const inputCustomStyle: React.CSSProperties = {
   transition: "border 0.2s ease",
 };
 
-export default function LoginForm({
-  onStudentSignIn,
-  onStaffSignIn,
-}: LoginFormProps) {
+export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
   const [mode, setMode] = useState<"student" | "staff">("student");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -79,13 +81,47 @@ export default function LoginForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleStudent() {
-    setError(null);
-    if (onStudentSignIn) return onStudentSignIn();
-    // Default behavior: redirect to backend Google OAuth endpoint.
-    // Backend should validate the hosted domain (hd) claim to allow only @iiitkottayam.ac.in.
-    window.location.href = "/auth/google";
-  }
+  const { login } = useAuth(); // Get login function
+  const navigate = useNavigate();
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    try {
+      // 1. Get the ID Token from Google
+      const { credential } = credentialResponse;
+      
+      if (!credential) {
+        setError("Google Login failed. No credential received.");
+        return;
+      }
+
+      // 2. Send it to YOUR Backend
+      const res = await fetch('http://localhost:3000/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: credential }), // Matches backend req.body.token
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Login failed on server");
+      }
+
+      // 3. Login Successful! Save to Context
+      // Backend returns: { token: "jwt...", user: { ... } }
+      login(data.token, data.user);
+
+      // 4. Redirect based on role
+      if (data.user.role === 'admin') navigate('/admin');
+      else navigate('/dashboard');
+
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message);
+    }
+  };
+  const handleGoogleError = () => {
+    setError("Google Login Failed. Please try again.");
+  };
 
   async function handleStaffSubmit(e?: React.FormEvent) {
     e?.preventDefault();
@@ -165,12 +201,21 @@ export default function LoginForm({
           >
             Sign in with your IIIT Kottayam Gmail account
           </p>
-          <button
-            style={{ ...primaryBtnStyle, width: "100%", marginBottom: 10 }}
-            onClick={handleStudent}
-          >
-            Sign in with Google
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 15 }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap
+              //theme="filled_green" // Tries to match your green theme
+              shape="rectangular"
+              width="100%"
+            />
+          </div>
+          {error && (
+            <div style={{ color: "red", fontSize: 13, marginBottom: 10, textAlign: 'center' }}>
+              {error}
+            </div>
+          )}
           <div
             style={{
               textAlign: "center",
