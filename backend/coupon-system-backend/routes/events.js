@@ -68,20 +68,51 @@ router.post('/:id/slots', async (req, res) => {
         res.status(500).json({ error: "Database error" });
     }
 });
-// GET ACTIVE EVENTS
+
 router.get('/active', async (req, res) => {
+    // We expect the student_id to be passed as a query parameter
+    // Example: GET /events/active?student_id=1
+    const studentId = req.query.student_id;
+
     try {
-        // Query: Select only events where status is 'active' AND date is today or future
-        const result = await db.query(
-            `SELECT * FROM events 
-             WHERE status = 'active' AND date >= CURRENT_DATE 
-             ORDER BY date ASC`
-        );
+        let query;
+        let params = [];
+
+        if (studentId) {
+            // --- SMART QUERY ---
+            // If we know the student, check if they are registered and get their slot details
+            query = `
+                SELECT 
+                    e.*, 
+                    r.registration_id,
+                    r.status as registration_status,
+                    s.floor,
+                    s.counter,
+                    s.time_start,
+                    s.time_end
+                FROM events e
+                LEFT JOIN registrations r ON e.event_id = r.event_id AND r.student_id = $1
+                LEFT JOIN event_slots s ON r.slot_id = s.slot_id
+                WHERE e.status = 'active' AND e.date >= CURRENT_DATE
+                ORDER BY e.date ASC
+            `;
+            params = [studentId];
+        } else {
+            // --- BASIC QUERY ---
+            // If no student_id, just return plain events (fallback)
+            query = `
+                SELECT * FROM events 
+                WHERE status = 'active' AND e.date >= CURRENT_DATE 
+                ORDER BY date ASC
+            `;
+        }
+
+        const result = await db.query(query, params);
         res.json(result.rows);
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Server error" });
     }
 });
-
 module.exports = router;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from 'react-bootstrap';
-import { CalendarEvent } from 'react-bootstrap-icons';
+import { CalendarEvent, Clock, GeoAlt } from 'react-bootstrap-icons'; // Import extra icons
 import QrButton from './common/QrButton';
 
 export interface EventData {
@@ -8,6 +8,10 @@ export interface EventData {
   title: string;
   description: string;
   validDate: string;
+  assignedSlot?: {
+    floor: string;
+    time: string;
+  };
 }
 
 interface EventCardProps {
@@ -17,32 +21,47 @@ interface EventCardProps {
 
 const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
   return (
-    <Card className="shadow-sm mb-3" style={{ borderRadius: '15px' }}>
-      <Card.Body className="p-4">
+    <Card className="shadow-sm mb-3 h-100" style={{ borderRadius: '15px', border: 'none' }}>
+      <Card.Body className="p-4 d-flex flex-column">
         
         {/* Title */}
-        <Card.Title className="h4" style={{ fontWeight: 700 }}>
+        <Card.Title className="h5 fw-bold mb-2">
           {event.title}
         </Card.Title>
         
         {/* Description */}
-        <Card.Text className="text-secondary">
+        <Card.Text className="text-secondary small mb-3">
           {event.description}
         </Card.Text>
         
         {/* Date Info */}
-        <div 
-          className="d-flex align-items-center text-secondary mb-4" 
-          style={{ fontSize: '0.9rem' }}
-        >
+        <div className="d-flex align-items-center text-muted small mb-3">
           <CalendarEvent className="me-2" />
           <span>Valid: {event.validDate}</span>
         </div>
+
+        {/* Only show this green box if the student has a slot */}
+        {event.assignedSlot && (
+          <div 
+            className="mt-auto mb-3 p-3 rounded" 
+            style={{ backgroundColor: '#e8f5e9', border: '1px solid #c8e6c9' }}
+          >
+            <div className="d-flex align-items-center mb-1 text-success fw-bold" style={{ fontSize: '0.9rem' }}>
+              <GeoAlt className="me-2" /> {event.assignedSlot.floor}
+            </div>
+            <div className="d-flex align-items-center text-success" style={{ fontSize: '0.9rem' }}>
+              <Clock className="me-2" /> {event.assignedSlot.time}
+            </div>
+          </div>
+        )}
         
-        <QrButton 
-          text="Get My QR Code" 
-          onClick={() => onGetQR(event.id)} 
-        />
+        <div className="mt-auto">
+          <QrButton 
+            // Change button text if they are already registered
+            text={event.assignedSlot ? "View QR Code" : "Get My QR Code"} 
+            onClick={() => onGetQR(event.id)} 
+          />
+        </div>
         
       </Card.Body>
     </Card>

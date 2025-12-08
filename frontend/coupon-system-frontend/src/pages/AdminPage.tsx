@@ -40,8 +40,8 @@ const AdminPage: React.FC = () => {
     setFetching(true);
     try {
       // Fetching ALL events (active and inactive) to manage them
-      const res = await fetch('http://localhost:3000/events/active'); // Or creating a new /events/all endpoint
-      if(res.ok) {
+        const res = await fetch('http://localhost:3000/events');      
+        if(res.ok) {
         const data = await res.json();
         setEvents(data);
       }
