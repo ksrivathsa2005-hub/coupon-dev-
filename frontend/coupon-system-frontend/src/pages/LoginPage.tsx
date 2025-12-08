@@ -1,11 +1,17 @@
 import React from "react";
+import LoginForm from "../components/LoginForm";
 
-const LoginPage: React.FC=()=>{
-    return (
-        <div className="container p-4">
-            <h1>Login Page</h1>
-            <p>This is the login page content.</p>
-        </div>
-    );
+const LoginPage: React.FC = () => {
+  return (
+    <div
+      className="d-flex align-items-center justify-content-center"
+      style={{ minHeight: "100vh", background: "#ffffff" }}
+    >
+      <div style={{ padding: 24 }}>
+        <LoginForm />
+      </div>
+    </div>
+  );
 };
+
 export default LoginPage;
