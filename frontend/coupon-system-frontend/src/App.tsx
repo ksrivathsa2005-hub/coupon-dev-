@@ -2,7 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
-import StaffPage from './pages/StaffPage';
+import StaffPage from './pages/StaffPage'; // Ensure this exists or create a placeholder
 import Navbar from './components/Navbar'; 
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -10,22 +10,28 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   return (
     <div className="d-flex flex-column min-vh-100">
-      
       <Navbar /> 
       
       <main className="flex-grow-1">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           
+          {/* 1. STUDENT ONLY */}
           <Route element={<ProtectedRoute allowedRoles={['student']} />}>
              <Route path="/dashboard" element={<DashboardPage />} />
           </Route>
           
+          {/* 2. ADMIN ONLY (This is the Gatekeeper) */}
+          {/* If a 'student' tries to go here, ProtectedRoute blocks them */}
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
              <Route path="/admin" element={<AdminPage />} />
           </Route>
           
-          <Route path="/staff" element={<StaffPage />} />
+          {/* 3. STAFF/VOLUNTEER ONLY */}
+          {/* We allow 'admin' here too, so admins can test scanning */}
+          <Route element={<ProtectedRoute allowedRoles={['volunteer', 'admin']} />}>
+             <Route path="/staff" element={<StaffPage />} />
+          </Route>
           
           <Route path="/" element={<LoginPage />} /> 
         </Routes>

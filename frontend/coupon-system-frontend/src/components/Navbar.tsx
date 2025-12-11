@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navbar, Container, Button, Dropdown } from 'react-bootstrap';
-import { PersonCircle, BoxArrowRight, ShieldLock, Person } from 'react-bootstrap-icons';
+import { PersonCircle, BoxArrowRight, ShieldLock } from 'react-bootstrap-icons'; // Removed 'Person' icon import
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -23,7 +23,7 @@ const AppNavbar: React.FC = () => {
     <Navbar bg="white" className="shadow-sm border-bottom sticky-top py-3">
       <Container className="d-flex justify-content-between align-items-center">
         
-        {/*LOGO(Left Side) */}
+        {/* LOGO (Left Side) */}
         <Navbar.Brand as={Link} to="/" className="fw-bold d-flex align-items-center text-dark p-0">
           <div 
             className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" 
@@ -33,11 +33,12 @@ const AppNavbar: React.FC = () => {
           </div>
           <span style={{ letterSpacing: '-0.5px', fontSize: '1.2rem' }}>College Coupon</span>
         </Navbar.Brand>
-
+        
+        {/* RIGHT SIDE CONTENT */}
         <div className="d-flex align-items-center">
           
           {isAuthenticated && user ? (
-            //LOGGED IN
+            // --- LOGGED IN STATE ---
             <Dropdown align="end">
               <Dropdown.Toggle 
                 variant="light" 
@@ -45,11 +46,12 @@ const AppNavbar: React.FC = () => {
                 className="d-flex align-items-center border bg-white rounded-pill px-2 px-md-3 py-1 py-md-2 shadow-sm"
                 style={{ transition: 'all 0.2s' }}
               >
+                {/* Avatar Circle */}
                 <div className="bg-light rounded-circle p-1 text-success d-flex align-items-center justify-content-center">
                   <PersonCircle size={24}/>
                 </div>
                 
-                {/* Name (Visible on desktop, hidden on very small phones if needed, or keep simpler) */}
+                {/* Name (Desktop only) */}
                 <span className="fw-semibold small text-dark ms-2 d-none d-sm-block">
                   {getCleanName(user.name)}
                 </span>
@@ -57,27 +59,27 @@ const AppNavbar: React.FC = () => {
 
               <Dropdown.Menu className="shadow-lg border-0 mt-3 p-2 rounded-4" style={{ minWidth: '240px', position: 'absolute' }}>
                 
-                {/* Mobile-only Name Display inside menu (since we might hide it on bar) */}
+                {/* Name Display (Mobile) */}
                 <div className="px-3 py-2 border-bottom mb-2 d-block d-sm-none">
                   <p className="mb-0 fw-bold text-dark">{getCleanName(user.name)}</p>
                 </div>
 
-                {/* Desktop Name Display */}
+                {/* Name Display (Desktop) */}
                 <div className="px-3 py-2 border-bottom mb-2 d-none d-sm-block">
                   <p className="mb-0 fw-bold text-dark">{getCleanName(user.name)}</p>
                   <small className="text-muted" style={{ fontSize: '0.75rem' }}>{user.email}</small>
                 </div>
 
+                {/* Role Badge */}
                 <Dropdown.ItemText className="mb-2">
                   <span className={`badge bg-${user.role === 'admin' ? 'danger' : 'primary'}-subtle text-${user.role === 'admin' ? 'danger' : 'primary'} border border-${user.role === 'admin' ? 'danger' : 'primary'}-subtle rounded-pill px-3`}>
                     {user.role.toUpperCase()}
                   </span>
                 </Dropdown.ItemText>
 
-                <Dropdown.Item as={Link} to="/dashboard" className="rounded-3 py-2">
-                  <Person className="me-2" /> My Dashboard
-                </Dropdown.Item>
+                {/* --- "My Dashboard" Link REMOVED Here --- */}
 
+                {/* Admin Link (Only if Admin) */}
                 {user.role === 'admin' && (
                   <Dropdown.Item as={Link} to="/admin" className="rounded-3 py-2">
                     <ShieldLock className="me-2" /> Admin Panel
@@ -86,13 +88,14 @@ const AppNavbar: React.FC = () => {
 
                 <Dropdown.Divider className="my-2" />
 
+                {/* Logout */}
                 <Dropdown.Item onClick={handleLogout} className="text-danger rounded-3 py-2 fw-semibold">
                   <BoxArrowRight className="me-2" /> Logout
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
           ) : (
-            //LOGGED OUT
+            // --- LOGGED OUT STATE ---
             location.pathname !== '/login' && (
               <Link to="/login">
                 <Button 

@@ -81,7 +81,7 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { login } = useAuth(); // Get login function
+  const { login } = useAuth(); 
   const navigate = useNavigate();
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
@@ -130,20 +130,28 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
       setError("Please enter username and password");
       return;
     }
+    
     try {
       setLoading(true);
-      if (onStaffSignIn) {
-        await onStaffSignIn({ username: username.trim(), password, remember });
-      } else {
-        // Default: call placeholder API - replace with your endpoint
-        const res = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: username.trim(), password }),
-        });
-        if (!res.ok) throw new Error("Invalid credentials");
-        console.log("staff login success");
-      }
+      
+      // 1. Call the new Backend Endpoint
+      const res = await fetch("http://localhost:3000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Invalid credentials");
+
+      // 2. Login using Context
+      login(data.token, data.user);
+
+      // 3. Redirect based on Role
+      if (data.user.role === 'admin') navigate('/admin');
+      else navigate('/staff');
+
     } catch (err: any) {
       console.error(err);
       setError(err?.message || "Login failed");

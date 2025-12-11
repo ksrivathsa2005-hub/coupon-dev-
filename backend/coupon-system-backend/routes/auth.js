@@ -34,6 +34,38 @@ const extractBatch = (email) => {
     }
 };
 
+router.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        // 1. Check for HARDCODED Admin (Simple way for now)
+        // You can add this to your .env file: ADMIN_USER=admin, ADMIN_PASS=admin123
+        if (username === 'admin' && password === 'admin123') {
+            
+            const appToken = jwt.sign(
+                { user_id: 999, role: 'admin', name: 'Super Admin', email: 'admin@system' },
+                JWT_SECRET,
+                { expiresIn: '12h' }
+            );
+
+            return res.json({
+                message: "Admin login successful",
+                token: appToken,
+                user: { user_id: 999, name: 'Super Admin', role: 'admin' }
+            });
+        }
+
+        // 2. Check Database for Staff/Volunteers
+        // Note: You need a 'password' column in your users table to do this properly.
+        // For now, let's assume you only use the hardcoded admin above or Google Auth.
+        
+        return res.status(401).json({ error: "Invalid credentials" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
 // ===============================
 // POST /auth/google
 // ===============================
