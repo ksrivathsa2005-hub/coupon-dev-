@@ -5,6 +5,7 @@ import AdminPage from './pages/AdminPage';
 import StaffPage from './pages/StaffPage';
 import Navbar from './components/Navbar'; 
 import Footer from './components/Footer';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -16,9 +17,14 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+             <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
           
-          <Route path="/admin" element={<AdminPage />} />
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+             <Route path="/admin" element={<AdminPage />} />
+          </Route>
+          
           <Route path="/staff" element={<StaffPage />} />
           
           <Route path="/" element={<LoginPage />} /> 

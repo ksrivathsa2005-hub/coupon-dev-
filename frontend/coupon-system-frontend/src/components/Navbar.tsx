@@ -1,87 +1,115 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Dropdown } from 'react-bootstrap'; 
-import { PersonCircle } from 'react-bootstrap-icons'; 
+import { Navbar, Container, Button, Dropdown } from 'react-bootstrap';
+import { PersonCircle, BoxArrowRight, ShieldLock, Person } from 'react-bootstrap-icons';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-interface User {
-  name: string;
-  email: string;
-}
+const AppNavbar: React.FC = () => {
+  const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-interface NavbarProps {
-  user?: User | null; 
-}
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
-const Navbar: React.FC<NavbarProps> = ({ user }) => {
-
-  const loggedInView = (
-    <Dropdown align="end">
-      <Dropdown.Toggle 
-        variant="light" 
-        id="dropdown-user" 
-        className="d-flex align-items-center"
-      >
-        <PersonCircle size={30} className="text-secondary" /> 
-      </Dropdown.Toggle>
-
-      <Dropdown.Menu>
-        <Dropdown.Header>Welcome, {user?.name}</Dropdown.Header>
-
-        <Dropdown.ItemText className="text-muted small ps-3">
-          {user?.email}
-        </Dropdown.ItemText>
-        
-        <Dropdown.Divider />
-        
-        <Dropdown.Item as={Link} to="/logout">
-          Logout
-        </Dropdown.Item>
-      </Dropdown.Menu>
-    </Dropdown>
-  );
-
-  const loggedOutView = (
-    <Dropdown align="end">
-      <Dropdown.Toggle 
-        variant="light" 
-        id="dropdown-user" 
-        className="d-flex align-items-center"
-      >
-        <PersonCircle size={30} className="text-secondary" /> 
-      </Dropdown.Toggle>
-
-      <Dropdown.Menu>
-        <Dropdown.Header>WELCOME!</Dropdown.Header>
-
-        <Dropdown.ItemText className="text-muted small ps-3">
-          Please Log in!
-        </Dropdown.ItemText>
-        
-        <Dropdown.Divider />
-        
-        <Dropdown.Item as={Link} to="/login">
-          Login
-        </Dropdown.Item>
-      </Dropdown.Menu>
-    </Dropdown>
-  );
+  const getCleanName = (fullName: string | undefined) => {
+    if (!fullName) return "User";
+    return fullName.split('-')[0].trim();
+  };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm">
-      <div className="container-fluid">
-        <Link className="navbar-brand d-flex align-items-center" to="/">
-          <span className="bg-success text-white rounded-circle p-2 me-2" style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+    <Navbar bg="white" className="shadow-sm border-bottom sticky-top py-3">
+      <Container className="d-flex justify-content-between align-items-center">
+        
+        {/*LOGO(Left Side) */}
+        <Navbar.Brand as={Link} to="/" className="fw-bold d-flex align-items-center text-dark p-0">
+          <div 
+            className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" 
+            style={{width: 38, height: 38, fontSize: '1.1rem'}}
+          >
             CC
-          </span>
-          <span className="h5 mb-0">College Coupon</span>
-        </Link>
+          </div>
+          <span style={{ letterSpacing: '-0.5px', fontSize: '1.2rem' }}>College Coupon</span>
+        </Navbar.Brand>
 
         <div className="d-flex align-items-center">
-          {user ? loggedInView : loggedOutView}
+          
+          {isAuthenticated && user ? (
+            //LOGGED IN
+            <Dropdown align="end">
+              <Dropdown.Toggle 
+                variant="light" 
+                id="dropdown-basic" 
+                className="d-flex align-items-center border bg-white rounded-pill px-2 px-md-3 py-1 py-md-2 shadow-sm"
+                style={{ transition: 'all 0.2s' }}
+              >
+                <div className="bg-light rounded-circle p-1 text-success d-flex align-items-center justify-content-center">
+                  <PersonCircle size={24}/>
+                </div>
+                
+                {/* Name (Visible on desktop, hidden on very small phones if needed, or keep simpler) */}
+                <span className="fw-semibold small text-dark ms-2 d-none d-sm-block">
+                  {getCleanName(user.name)}
+                </span>
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu className="shadow-lg border-0 mt-3 p-2 rounded-4" style={{ minWidth: '240px', position: 'absolute' }}>
+                
+                {/* Mobile-only Name Display inside menu (since we might hide it on bar) */}
+                <div className="px-3 py-2 border-bottom mb-2 d-block d-sm-none">
+                  <p className="mb-0 fw-bold text-dark">{getCleanName(user.name)}</p>
+                </div>
+
+                {/* Desktop Name Display */}
+                <div className="px-3 py-2 border-bottom mb-2 d-none d-sm-block">
+                  <p className="mb-0 fw-bold text-dark">{getCleanName(user.name)}</p>
+                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>{user.email}</small>
+                </div>
+
+                <Dropdown.ItemText className="mb-2">
+                  <span className={`badge bg-${user.role === 'admin' ? 'danger' : 'primary'}-subtle text-${user.role === 'admin' ? 'danger' : 'primary'} border border-${user.role === 'admin' ? 'danger' : 'primary'}-subtle rounded-pill px-3`}>
+                    {user.role.toUpperCase()}
+                  </span>
+                </Dropdown.ItemText>
+
+                <Dropdown.Item as={Link} to="/dashboard" className="rounded-3 py-2">
+                  <Person className="me-2" /> My Dashboard
+                </Dropdown.Item>
+
+                {user.role === 'admin' && (
+                  <Dropdown.Item as={Link} to="/admin" className="rounded-3 py-2">
+                    <ShieldLock className="me-2" /> Admin Panel
+                  </Dropdown.Item>
+                )}
+
+                <Dropdown.Divider className="my-2" />
+
+                <Dropdown.Item onClick={handleLogout} className="text-danger rounded-3 py-2 fw-semibold">
+                  <BoxArrowRight className="me-2" /> Logout
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          ) : (
+            //LOGGED OUT
+            location.pathname !== '/login' && (
+              <Link to="/login">
+                <Button 
+                  variant="dark" 
+                  className="px-4 py-2 rounded-pill fw-semibold shadow-sm"
+                  style={{ fontSize: '0.9rem' }}
+                >
+                  Login
+                </Button>
+              </Link>
+            )
+          )}
         </div>
-      </div>
-    </nav>
+
+      </Container>
+    </Navbar>
   );
 };
 
-export default Navbar;
+export default AppNavbar;
