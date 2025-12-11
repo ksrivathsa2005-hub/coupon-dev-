@@ -7,7 +7,7 @@ import App from './App.tsx'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 // REPLACE THIS WITH YOUR REAL GOOGLE CLIENT ID
-const GOOGLE_CLIENT_ID = "997232015364-urvnif0r9aacvtlslfu1kurbrps9jb0h.apps.googleusercontent.com"; 
+const GOOGLE_CLIENT_ID = ".com"; 
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
