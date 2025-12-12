@@ -2,10 +2,11 @@ import { Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
-import StaffPage from './pages/StaffPage'; // Ensure this exists or create a placeholder
+import StaffPage from './pages/StaffPage'; 
 import Navbar from './components/Navbar'; 
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import StaffLoginPage from './pages/StaffLoginPage';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <main className="flex-grow-1">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/staff-access" element={<StaffLoginPage />} />
           
           {/* 1. STUDENT ONLY */}
           <Route element={<ProtectedRoute allowedRoles={['student']} />}>

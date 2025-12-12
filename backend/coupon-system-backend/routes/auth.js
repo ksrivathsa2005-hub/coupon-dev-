@@ -38,16 +38,13 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        // 1. Check for HARDCODED Admin (Simple way for now)
-        // You can add this to your .env file: ADMIN_USER=admin, ADMIN_PASS=admin123
+        // 1. Check for HARDCODED Admin (Keep this for safety/backup)
         if (username === 'admin' && password === 'admin123') {
-            
             const appToken = jwt.sign(
                 { user_id: 999, role: 'admin', name: 'Super Admin', email: 'admin@system' },
                 JWT_SECRET,
                 { expiresIn: '12h' }
             );
-
             return res.json({
                 message: "Admin login successful",
                 token: appToken,
@@ -55,9 +52,42 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // 2. Check Database for Staff/Volunteers
-        // Note: You need a 'password' column in your users table to do this properly.
-        // For now, let's assume you only use the hardcoded admin above or Google Auth.
+        // 2. CHECK DATABASE (For Volunteers/Staff)
+        // We check if the 'email' matches the username provided (e.g., 'f1c1')
+        const result = await db.query(
+            'SELECT * FROM users WHERE email = $1', 
+            [username]
+        );
+
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+
+            // Verify Password (In production, use bcrypt.compare)
+            // For now, we do a direct string comparison
+            if (user.password === password) {
+                
+                const appToken = jwt.sign(
+                    { 
+                        user_id: user.user_id, 
+                        role: user.role, 
+                        name: user.name, 
+                        email: user.email 
+                    },
+                    JWT_SECRET,
+                    { expiresIn: '24h' }
+                );
+
+                return res.json({
+                    message: "Login successful",
+                    token: appToken,
+                    user: { 
+                        user_id: user.user_id, 
+                        name: user.name, 
+                        role: user.role 
+                    }
+                });
+            }
+        }
         
         return res.status(401).json({ error: "Invalid credentials" });
 
