@@ -1,21 +1,19 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom' 
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { AuthProvider } from '../src/context/AuthContext.tsx';
+import { AuthProvider } from './context/AuthContext';
+import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 const GOOGLE_CLIENT_ID = ".apps.googleusercontent.com"; 
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </BrowserRouter>
-    </GoogleOAuthProvider>
-  </React.StrictMode>,
+  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </GoogleOAuthProvider>
 )

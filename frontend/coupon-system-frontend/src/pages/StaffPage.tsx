@@ -1,11 +1,144 @@
-import React from "react";
+import React, { useState } from 'react';
+import { Container, Row, Col, Card, Button, Spinner } from 'react-bootstrap';
+import { QrScanner } from '../components/QrScanner';
+import { useAuth } from '../context/AuthContext';
+import ScanResult from '../components/ScanResult';
 
-const StaffPage: React.FC=()=>{
+export const StaffPage = () => {
+  const { user } = useAuth();
+  
+  const [showScanner, setShowScanner] = useState(false);
+  const [loading, setLoading] = useState(false);
+  // 1. UPDATE TYPE: Add 'warning' to the allowed statuses here
+  const [scanResult, setScanResult] = useState<{ status: 'success' | 'error' | 'warning', message: string, studentId?: string } | null>(null);
+
+  const handleScanSuccess = async (decodedText: string) => {
+    setShowScanner(false);
+    setLoading(true);
+    setScanResult(null);
+
+    try {
+      const res = await fetch('http://localhost:3000/registrations/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            qr_token: decodedText, 
+            volunteer_id: user?.user_id 
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // SUCCESS (Green)
+        setScanResult({
+            status: 'success',
+            message: 'Coupon Verified. You can serve the food.',
+            studentId: `Student ID: ${data.student_id}`
+        });
+      } else {
+        // FAILURE (Red or Yellow)
+        const errorMessage = data.error || 'Invalid Token';
+        
+        // 2. UPDATE LOGIC: Check if the message indicates "Already Served"
+        // Note: This string match must align with your backend error message.
+        const isWarning = errorMessage.toLowerCase().includes("already served");
+
+        setScanResult({
+            status: isWarning ? 'warning' : 'error', // Set warning if matched, otherwise error
+            message: errorMessage
+        });
+      }
+
+    } catch (err) {
+      console.error(err);
+      setScanResult({ status: 'error', message: 'Server Connection Error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setScanResult(null);
+    setShowScanner(true);
+  };
+
+  // --- CONDITIONAL RENDER: SHOW RESULT PAGE ---
+  if (scanResult) {
+    // 3. UPDATE RENDERING: Determine title based on specific status
+    let title = 'Scan Failed';
+    if (scanResult.status === 'success') title = 'Scan Successful!';
+    if (scanResult.status === 'warning') title = 'Already Served';
+
     return (
-        <div className="container p-4">
-            <h1>Staff Page</h1>
-            <p>This is the staff page content.</p>
-        </div>
+      <ScanResult 
+        result={{
+          status: scanResult.status, // Pass the actual status (success/warning/error)
+          title: title,
+          // Combine message and ID if ID exists
+          message: scanResult.studentId 
+            ? `${scanResult.message} (${scanResult.studentId})` 
+            : scanResult.message
+        }} 
+        onScanNext={handleReset} 
+      />
     );
+  }
+
+  // --- STANDARD UI ---
+  return (
+    <Container className="py-5">
+      <div className="text-center mb-5">
+        <h2 className="fw-bold">Volunteer Scanner</h2>
+        <p className="text-muted">Scan student QR codes to mark them as served.</p>
+      </div>
+
+      <Row className="justify-content-center">
+        <Col xs={12} md={8} lg={6}>
+          
+          {/* INITIAL STATE */}
+          {!showScanner && !loading && (
+            <Card className="text-center p-5 shadow-sm border-0">
+              <div className="mb-3 text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
+                  <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                </svg>
+              </div>
+              <h4>Ready to Serve?</h4>
+              <Button variant="primary" size="lg" className="mt-3 px-5 rounded-pill" onClick={() => setShowScanner(true)}>
+                Start Camera
+              </Button>
+            </Card>
+          )}
+
+          {/* LOADING STATE */}
+          {loading && (
+            <div className="text-center p-5">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3 text-muted fw-bold">Verifying Coupon...</p>
+            </div>
+          )}
+
+          {/* SCANNER STATE */}
+          {showScanner && (
+            <Card className="shadow-lg border-0 overflow-hidden">
+              <Card.Header className="bg-dark text-white text-center py-3 d-flex justify-content-between align-items-center">
+                <span className="fw-bold">Scanning...</span>
+                <Button variant="outline-light" size="sm" onClick={() => setShowScanner(false)}>Close</Button>
+              </Card.Header>
+              <Card.Body className="p-0 bg-black">
+                <QrScanner 
+                  onScanSuccess={handleScanSuccess}
+                />
+              </Card.Body>
+            </Card>
+          )}
+
+        </Col>
+      </Row>
+    </Container>
+  );
 };
+
 export default StaffPage;
