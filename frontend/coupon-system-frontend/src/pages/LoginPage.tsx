@@ -1,7 +1,7 @@
 import React, { useState } from "react";
+
 import { GoogleLogin } from '@react-oauth/google';
-import type { CredentialResponse } from '@react-oauth/google';
-import { useAuth } from '../context/AuthContext'; 
+import type { CredentialResponse } from '@react-oauth/google'; import { useAuth } from '../context/AuthContext'; 
 import { useNavigate } from 'react-router-dom';
 import { Container, Card } from 'react-bootstrap';
 
@@ -15,7 +15,7 @@ const LoginPage: React.FC = () => {
       const { credential } = credentialResponse;
       if (!credential) return;
 
-      // Use IP if testing on phone
+      // Use your computer's IP if testing on phone, otherwise localhost
       const API_URL = "http://localhost:3000"; 
 
       const res = await fetch(`${API_URL}/auth/google`, {
@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message);
+      setError(err.message || "Login Failed");
     }
   };
 
@@ -44,14 +44,20 @@ const LoginPage: React.FC = () => {
     <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
       <Card style={{ maxWidth: 480, width: "100%", padding: 32, border: "none", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
         
+        {/* Header Section with New Logo and Name */}
         <div className="text-center mb-4">
-          <div className="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{width: 50, height: 50, fontSize: '1.2rem'}}>
-            CC
-          </div>
-          <h4 className="fw-bold">College Coupon</h4>
+           {/* Assuming your logo is at public/klee-logo.png */}
+           <img 
+            src="/klee-logo.png" 
+            alt="Klee Logo" 
+            style={{ width: '80px', height: 'auto' }} 
+            className="mb-3"
+          />
+          <h4 className="fw-bold">Klee</h4>
           <p className="text-muted">Sign in with your IIIT Kottayam account</p>
         </div>
 
+        {/* Google Login Button */}
         <div className="d-flex justify-content-center mb-3">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
@@ -62,15 +68,17 @@ const LoginPage: React.FC = () => {
           />
         </div>
 
+        {/* Error Message Display */}
         {error && (
           <div className="text-danger text-center small mb-3">{error}</div>
         )}
 
+        {/* Footer Info */}
         <div className="text-center" style={{ fontSize: 12, color: "#888" }}>
           Only <strong>@iiitkottayam.ac.in</strong> accounts are allowed
         </div>
         
-        {/* Optional: A very subtle link for staff in the footer */}
+        {/* Hidden Staff Link */}
         <div className="mt-5 text-center">
             <a href="/staff-access" style={{ fontSize: '10px', color: '#eee', textDecoration: 'none' }}>.</a>
         </div>
