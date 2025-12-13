@@ -67,6 +67,7 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
   );
 
   return (
+<<<<<<< Updated upstream
     <nav className="navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm">
       <div className="container-fluid">
         <Link className="navbar-brand d-flex align-items-center" to="/">
@@ -76,6 +77,23 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
           <span className="h5 mb-0">College Coupon</span>
         </Link>
 
+=======
+    <Navbar bg="white" className="shadow-sm border-bottom sticky-top py-3">
+      <Container className="d-flex justify-content-between align-items-center">
+        
+        {/* LOGO (Left Side) */}
+        <Navbar.Brand as={Link} to="/" className="fw-bold d-flex align-items-center text-dark p-0">
+          <img 
+            src="/klee-logo.png" 
+            alt="Klee Logo" 
+            style={{width: 38, height: 38}} 
+            className="me-2"
+          />
+          <span style={{ letterSpacing: '-0.5px', fontSize: '1.2rem' }}>Klee</span>
+        </Navbar.Brand>
+        
+        {/* RIGHT SIDE CONTENT */}
+>>>>>>> Stashed changes
         <div className="d-flex align-items-center">
           {user ? loggedInView : loggedOutView}
         </div>
