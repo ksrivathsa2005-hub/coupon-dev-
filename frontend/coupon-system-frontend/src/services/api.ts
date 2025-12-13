@@ -1,5 +1,5 @@
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://klee-backend.onrender.com';
 
 // Helper to handle headers and errors
 const request = async (endpoint: string, options: RequestInit = {}) => {

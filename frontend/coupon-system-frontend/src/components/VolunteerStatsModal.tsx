@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Card, Row, Col, ProgressBar, Spinner, Alert } from 'react-bootstrap';
+import { Modal, Button, Card, ProgressBar, Spinner, Alert } from 'react-bootstrap';
 import { BarChartFill, PeopleFill } from 'react-bootstrap-icons';
 import { useAuth } from '../context/AuthContext';
+import { eventsApi } from '../services/api';
 
 interface VolunteerStatsModalProps {
   show: boolean;
@@ -29,12 +30,12 @@ const VolunteerStatsModal: React.FC<VolunteerStatsModalProps> = ({ show, onHide,
   const fetchStats = async () => {
     setLoading(true);
     try {
-      // Fetch stats specific to THIS logged-in volunteer
-      const res = await fetch(`http://localhost:3000/events/${eventId}/stats/volunteer/${user?.user_id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
+      if (!eventId || !user?.user_id) return;
+
+      // API CALL: Use the service layer 
+      const data = await eventsApi.getVolunteerStats(eventId, user.user_id);
+      
+      setStats(data);
     } catch (err) {
       console.error(err);
     } finally {
