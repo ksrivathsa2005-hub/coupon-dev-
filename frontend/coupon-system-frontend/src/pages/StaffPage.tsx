@@ -1,88 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Spinner, Badge, ListGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Spinner, ListGroup } from 'react-bootstrap';
 import { QrScanner } from '../components/QrScanner';
 import { useAuth } from '../context/AuthContext';
 import ScanResult from '../components/ScanResult';
-// 1. Import the new Modal
 import VolunteerStatsModal from '../components/VolunteerStatsModal'; 
 import { CalendarEvent, ChevronRight } from 'react-bootstrap-icons';
+import { registrationApi, eventsApi } from '../services/api';
 
-// Define Event Interface locally if not imported
 interface EventData {
-    event_id: number;
-    name: string;
-    date: string;
-    status: string;
+  event_id: number;
+  name: string;
+  date: string;
+  status: string;
 }
 
 export const StaffPage = () => {
   const { user } = useAuth();
   
+  // --- UI States ---
   const [showScanner, setShowScanner] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // --- Result State ---
   const [scanResult, setScanResult] = useState<{ status: 'success' | 'error' | 'warning', message: string, studentId?: string } | null>(null);
 
-  // --- NEW: Analytics State ---
+  // --- Analytics State ---
   const [events, setEvents] = useState<EventData[]>([]);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<{id: number, name: string} | null>(null);
 
-  // Fetch Active Events on Load
+  // 1. Fetch Active Events (Using Service Layer)
   useEffect(() => {
     const fetchEvents = async () => {
         try {
-            const res = await fetch('http://localhost:3000/events');
-            if(res.ok) {
-                const data = await res.json();
-                // Filter only ACTIVE events for the volunteer to see
-                setEvents(data.filter((e: EventData) => e.status === 'active'));
-            }
-        } catch(err) { console.error(err); }
+            //   API CALL
+            const data = await eventsApi.getAll();
+            // Filter only ACTIVE events for the volunteer to see
+            setEvents(data.filter((e: EventData) => e.status === 'active'));
+        } catch(err) { 
+            console.error("Failed to load events", err); 
+        }
     };
     fetchEvents();
   }, []);
 
+  // 2. Open Stats Modal
   const handleOpenStats = (event: EventData) => {
       setSelectedEvent({ id: event.event_id, name: event.name });
       setShowStatsModal(true);
   };
-  // ---------------------------
 
+  // 3. Handle Scan (Using Service Layer)
   const handleScanSuccess = async (decodedText: string) => {
     setShowScanner(false);
     setLoading(true);
     setScanResult(null);
 
     try {
-      const res = await fetch('http://localhost:3000/registrations/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            qr_token: decodedText, 
-            volunteer_id: user?.user_id 
-        })
+      if (!user?.user_id) throw new Error("User not authenticated");
+
+      //   API CALL
+      const data = await registrationApi.scan(decodedText, user.user_id);
+
+      // Success
+      setScanResult({
+        status: 'success',
+        message: 'Coupon Verified. You can serve the food.',
       });
 
-      const data = await res.json();
+    } catch (err: any) {
+      // Error Handling
+      const errorMessage = err.message || 'Invalid Token';
+      const isWarning = errorMessage.toLowerCase().includes("already served");
 
-      if (res.ok) {
-        setScanResult({
-            status: 'success',
-            message: 'Coupon Verified. You can serve the food.',
-        });
-      } else {
-        const errorMessage = data.error || 'Invalid Token';
-        const isWarning = errorMessage.toLowerCase().includes("already served");
-
-        setScanResult({
-            status: isWarning ? 'warning' : 'error',
-            message: errorMessage
-        });
-      }
-
-    } catch (err) {
-      console.error(err);
-      setScanResult({ status: 'error', message: 'Server Connection Error' });
+      setScanResult({
+        status: isWarning ? 'warning' : 'error',
+        message: errorMessage
+      });
     } finally {
       setLoading(false);
     }
@@ -93,6 +87,7 @@ export const StaffPage = () => {
     setShowScanner(true);
   };
 
+  // --- RENDER: Result Screen ---
   if (scanResult) {
     let title = 'Scan Failed';
     if (scanResult.status === 'success') title = 'Scan Successful!';
@@ -112,6 +107,7 @@ export const StaffPage = () => {
     );
   }
 
+  // --- RENDER: Main Dashboard ---
   return (
     <Container className="py-5">
       <div className="text-center mb-5">
@@ -122,7 +118,7 @@ export const StaffPage = () => {
       <Row className="justify-content-center">
         <Col xs={12} md={8} lg={6}>
           
-          {/* INITIAL STATE */}
+          {/* INITIAL STATE: Start Button */}
           {!showScanner && !loading && (
             <Card className="text-center p-5 shadow-sm border-0 mb-5">
               <div className="mb-3 text-primary">
@@ -161,7 +157,7 @@ export const StaffPage = () => {
             </Card>
           )}
 
-          {/* --- NEW: ANALYTICS SECTION --- */}
+          {/* --- ANALYTICS SECTION --- */}
           {!showScanner && !loading && (
              <div className="mt-4">
                  <h5 className="fw-bold mb-3 text-muted border-bottom pb-2">Your Analytics</h5>
