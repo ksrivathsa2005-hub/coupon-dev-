@@ -19,12 +19,24 @@ const AppNavbar: React.FC = () => {
     return fullName.split('-')[0].trim();
   };
 
+  // 🧠 SMART ROUTING: Decide where the Logo clicks should go
+  const getHomeRoute = () => {
+    if (!isAuthenticated || !user) return "/login";
+    if (user.role === 'admin') return "/admin";
+    if (user.role === 'volunteer') return "/staff";
+    return "/dashboard"; // Default for students
+  };
+
   return (
     <Navbar bg="white" className="shadow-sm border-bottom sticky-top py-3">
       <Container className="d-flex justify-content-between align-items-center">
         
-        {/* LOGO (Left Side) - UPDATED TO KLEE */}
-        <Navbar.Brand as={Link} to="/" className="fw-bold d-flex align-items-center text-dark p-0">
+        {/* LOGO (Left Side) */}
+        <Navbar.Brand 
+            as={Link} 
+            to={getHomeRoute()} 
+            className="fw-bold d-flex align-items-center text-dark p-0"
+        >
           <img 
             src="/klee-logo.png" 
             alt="Klee Logo" 
@@ -94,7 +106,8 @@ const AppNavbar: React.FC = () => {
             </Dropdown>
           ) : (
             // --- LOGGED OUT STATE ---
-            location.pathname !== '/login' && (
+            // 👇 UPDATE: Hide button if on ANY login-related page
+            !['/login', '/staff-access'].includes(location.pathname) && (
               <Link to="/login">
                 <Button 
                   variant="dark" 
