@@ -142,7 +142,7 @@ const DashboardPage: React.FC = () => {
         }}
       >
         <h1 className="fw-bold display-6 text-dark mb-2">
-          Welcome back, <span className="text-success">{getCleanName(user?.name)}!</span> 👋
+          Welcome back, <span className="text-success">{getCleanName(user?.name)}!</span> 
         </h1>
         <p className="text-secondary mb-0" style={{ fontSize: '1.1rem' }}>
           {todayDate}

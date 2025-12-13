@@ -140,6 +140,53 @@ router.delete('/:id', async (req, res) => {
         res.status(500).json({ error: "Server error. Could not delete event data." });
     }
 });
+
+// GET EVENT STATISTICS
+router.get('/:id/stats', async (req, res) => {
+    const { id } = req.params;
+    try {
+        // 1. Total Served
+        const totalReq = await db.query(`
+            SELECT COUNT(*) 
+            FROM volunteer_actions va
+            JOIN registrations r ON va.registration_id = r.registration_id
+            WHERE r.event_id = $1
+        `, [id]);
+
+        // 2. Breakdown by Batch (Year)
+        const batchReq = await db.query(`
+            SELECT u.batch, COUNT(*) as count
+            FROM volunteer_actions va
+            JOIN registrations r ON va.registration_id = r.registration_id
+            JOIN users u ON r.student_id = u.user_id
+            WHERE r.event_id = $1
+            GROUP BY u.batch
+            ORDER BY u.batch ASC
+        `, [id]);
+
+        // 3. Breakdown by Counter (Volunteer Name)
+        const counterReq = await db.query(`
+            SELECT u.name as counter_name, COUNT(*) as count
+            FROM volunteer_actions va
+            JOIN users u ON va.volunteer_id = u.user_id
+            JOIN registrations r ON va.registration_id = r.registration_id
+            WHERE r.event_id = $1
+            GROUP BY u.name
+            ORDER BY u.name ASC
+        `, [id]);
+
+        res.json({
+            total: parseInt(totalReq.rows[0].count),
+            byBatch: batchReq.rows,
+            byCounter: counterReq.rows
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error fetching stats" });
+    }
+});
+
 // routes/events.js
 
 router.get('/active', async (req, res) => {

@@ -117,7 +117,7 @@ export const StaffPage = () => {
                 <p className="mt-3 text-muted fw-bold">Verifying Coupon...</p>
             </div>
           )}
-
+    
           {/* SCANNER STATE */}
           {showScanner && (
             <Card className="shadow-lg border-0 overflow-hidden">
