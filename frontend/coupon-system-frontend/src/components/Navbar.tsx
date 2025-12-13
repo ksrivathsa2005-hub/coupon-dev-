@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navbar, Container, Button, Dropdown } from 'react-bootstrap';
-import { PersonCircle, BoxArrowRight, ShieldLock } from 'react-bootstrap-icons'; // Removed 'Person' icon import
+import { PersonCircle, BoxArrowRight, ShieldLock } from 'react-bootstrap-icons';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -23,15 +23,15 @@ const AppNavbar: React.FC = () => {
     <Navbar bg="white" className="shadow-sm border-bottom sticky-top py-3">
       <Container className="d-flex justify-content-between align-items-center">
         
-        {/* LOGO (Left Side) */}
+        {/* LOGO (Left Side) - UPDATED TO KLEE */}
         <Navbar.Brand as={Link} to="/" className="fw-bold d-flex align-items-center text-dark p-0">
-          <div 
-            className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" 
-            style={{width: 38, height: 38, fontSize: '1.1rem'}}
-          >
-            CC
-          </div>
-          <span style={{ letterSpacing: '-0.5px', fontSize: '1.2rem' }}>College Coupon</span>
+          <img 
+            src="/klee-logo.png" 
+            alt="Klee Logo" 
+            style={{ height: '35px', width: 'auto' }} 
+            className="me-2"
+          />
+          <span style={{ letterSpacing: '-0.5px', fontSize: '1.2rem' }}>Klee</span>
         </Navbar.Brand>
         
         {/* RIGHT SIDE CONTENT */}
@@ -76,8 +76,6 @@ const AppNavbar: React.FC = () => {
                     {user.role.toUpperCase()}
                   </span>
                 </Dropdown.ItemText>
-
-                {/* --- "My Dashboard" Link REMOVED Here --- */}
 
                 {/* Admin Link (Only if Admin) */}
                 {user.role === 'admin' && (

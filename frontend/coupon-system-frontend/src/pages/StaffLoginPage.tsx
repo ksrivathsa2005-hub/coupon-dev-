@@ -52,16 +52,16 @@ const StaffLoginPage: React.FC = () => {
   };
 
   return (
-    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: "100vh", backgroundColor: "#f0f2f5" }}>
-      <Card style={{ width: "100%", maxWidth: "400px" }} className="shadow-lg border-0">
-        <Card.Body className="p-5">
-          <div className="text-center mb-4">
-            <div className="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{ width: 60, height: 60 }}>
-              <ShieldLock size={30} />
-            </div>
-            <h4 className="fw-bold">Staff Access</h4>
-            <p className="text-muted small">Authorized personnel only</p>
+    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
+      <Card style={{ maxWidth: 480, width: "100%", padding: 32, border: "none", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
+        
+        <div className="text-center mb-4">
+          <div className="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{ width: 60, height: 60 }}>
+            <ShieldLock size={30} />
           </div>
+          <h4 className="fw-bold">Klee Staff Access</h4>
+          <p className="text-muted">Authorized personnel only</p>
+        </div>
 
           {error && <Alert variant="danger" className="py-2 text-center small">{error}</Alert>}
 
@@ -85,7 +85,7 @@ const StaffLoginPage: React.FC = () => {
               />
             </Form.Group>
 
-            <Button variant="dark" type="submit" className="w-100 py-2 fw-bold" disabled={loading}>
+            <Button variant="success" type="submit" className="w-100 py-2 fw-bold" disabled={loading}>
               {loading ? "Verifying..." : "Login"}
             </Button>
           </Form>
@@ -93,7 +93,7 @@ const StaffLoginPage: React.FC = () => {
           <div className="text-center mt-4">
             <a href="/" className="text-decoration-none small text-muted">← Back to Student Login</a>
           </div>
-        </Card.Body>
+        
       </Card>
     </Container>
   );

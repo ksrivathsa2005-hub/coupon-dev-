@@ -9,7 +9,7 @@ export const StaffPage = () => {
   
   const [showScanner, setShowScanner] = useState(false);
   const [loading, setLoading] = useState(false);
-  // 1. UPDATE TYPE: Add 'warning' to the allowed statuses here
+  
   const [scanResult, setScanResult] = useState<{ status: 'success' | 'error' | 'warning', message: string, studentId?: string } | null>(null);
 
   const handleScanSuccess = async (decodedText: string) => {
@@ -34,18 +34,17 @@ export const StaffPage = () => {
         setScanResult({
             status: 'success',
             message: 'Coupon Verified. You can serve the food.',
-            studentId: `Student ID: ${data.student_id}`
+            // Removed studentId from here as requested
         });
       } else {
         // FAILURE (Red or Yellow)
         const errorMessage = data.error || 'Invalid Token';
         
-        // 2. UPDATE LOGIC: Check if the message indicates "Already Served"
-        // Note: This string match must align with your backend error message.
+        // Check if the message indicates "Already Served"
         const isWarning = errorMessage.toLowerCase().includes("already served");
 
         setScanResult({
-            status: isWarning ? 'warning' : 'error', // Set warning if matched, otherwise error
+            status: isWarning ? 'warning' : 'error',
             message: errorMessage
         });
       }
@@ -65,7 +64,6 @@ export const StaffPage = () => {
 
   // --- CONDITIONAL RENDER: SHOW RESULT PAGE ---
   if (scanResult) {
-    // 3. UPDATE RENDERING: Determine title based on specific status
     let title = 'Scan Failed';
     if (scanResult.status === 'success') title = 'Scan Successful!';
     if (scanResult.status === 'warning') title = 'Already Served';
@@ -73,9 +71,9 @@ export const StaffPage = () => {
     return (
       <ScanResult 
         result={{
-          status: scanResult.status, // Pass the actual status (success/warning/error)
+          status: scanResult.status,
           title: title,
-          // Combine message and ID if ID exists
+          // Only append Student ID if it exists (which now only happens for errors/warnings if backend sends it, or never)
           message: scanResult.studentId 
             ? `${scanResult.message} (${scanResult.studentId})` 
             : scanResult.message

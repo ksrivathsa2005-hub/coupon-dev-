@@ -106,7 +106,40 @@ router.post('/:id/slots', async (req, res) => {
         res.status(500).json({ error: "Database error" });
     }
 });
+// DELETE EVENT (Hard Delete everything related to it)
+router.delete('/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        // 1. Delete Volunteer Actions (Serving Logs) associated with this event's registrations
+        // We find all registrations for this event and delete their logs first.
+        await db.query(`
+            DELETE FROM volunteer_actions 
+            WHERE registration_id IN (
+                SELECT registration_id FROM registrations WHERE event_id = $1
+            )
+        `, [id]);
 
+        // 2. Delete Student Registrations
+        await db.query('DELETE FROM registrations WHERE event_id = $1', [id]);
+
+        // 3. Delete Event Slots (Time slots & Counters)
+        await db.query('DELETE FROM event_slots WHERE event_id = $1', [id]);
+
+        // 4. Finally, Delete the Main Event
+        const result = await db.query('DELETE FROM events WHERE event_id = $1 RETURNING *', [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Event not found" });
+        }
+
+        res.json({ message: "Event and all related data permanently deleted." });
+
+    } catch (err) {
+        console.error("Delete Error:", err);
+        res.status(500).json({ error: "Server error. Could not delete event data." });
+    }
+});
 // routes/events.js
 
 router.get('/active', async (req, res) => {
