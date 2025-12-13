@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Container, Card, Form, Button, Row, Col, Alert, Spinner, Table, Badge } from 'react-bootstrap';
 import { PlusCircle, Trash, PencilSquare, Lock, Unlock, BarChartFill } from 'react-bootstrap-icons';
 import colors from '../assets/constants/colors';
-import { useAuth } from '../context/AuthContext';
-// 👇 Import the new component
 import EventStatsModal from '../components/EventStatsModal';
+import { eventsApi } from '../services/api';
 
 interface FloorConfig {
   id: number;
@@ -24,8 +23,6 @@ interface EventData {
 }
 
 const AdminPage: React.FC = () => {
-  const { token } = useAuth(); // Get token for API calls
-
   // --- Form State ---
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
@@ -72,13 +69,9 @@ const AdminPage: React.FC = () => {
   const fetchEvents = async () => {
     setFetching(true);
     try {
-      const res = await fetch('http://localhost:3000/events', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });      
-      if(res.ok) {
-        const data = await res.json();
-        setEvents(data);
-      }
+      //    API CALL: Get All Events
+      const data = await eventsApi.getAll();
+      setEvents(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -104,7 +97,6 @@ const AdminPage: React.FC = () => {
     setDescription(event.description);
     setCurrentStatus(event.status);
     
-    // Fix Date Input (use local time parts to avoid timezone shift)
     const dt = new Date(event.date);
     const year = dt.getFullYear();
     const month = String(dt.getMonth() + 1).padStart(2, '0');
@@ -136,7 +128,6 @@ const AdminPage: React.FC = () => {
   const handleToggleStatus = async () => {
     if(!editingEventId) return;
     
-    // Validation: Cannot re-open past events without extending time
     if (currentStatus === 'closed') {
         if (isTimeInPast(eventDate, endTime)) {
             alert("You cannot re-open this event because the End Time has passed.\n\nPlease extend the 'End Time' below first, then click Update.");
@@ -150,20 +141,12 @@ const AdminPage: React.FC = () => {
     if(!window.confirm(confirmMsg)) return;
 
     try {
-        const res = await fetch(`http://localhost:3000/events/${editingEventId}`, {
-            method: 'PATCH',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
-            },
-            body: JSON.stringify({ status: newStatus })
-        });
-
-        if(res.ok) {
-            setCurrentStatus(newStatus);
-            setMessage({ type: 'success', text: `Event marked as ${newStatus}` });
-            fetchEvents();
-        }
+        //    API CALL: Update Status
+        await eventsApi.update(editingEventId, { status: newStatus });
+        
+        setCurrentStatus(newStatus);
+        setMessage({ type: 'success', text: `Event marked as ${newStatus}` });
+        fetchEvents();
     } catch (err) {
         setMessage({ type: 'danger', text: 'Failed to update status' });
     }
@@ -172,14 +155,11 @@ const AdminPage: React.FC = () => {
   const handleDelete = async (id: number) => {
     if(!window.confirm("Are you sure you want to permanently delete this event? This will remove all student registrations and logs.")) return;
     try {
-      const res = await fetch(`http://localhost:3000/events/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if(res.ok) {
-        setMessage({ type: 'success', text: 'Event deleted' });
-        fetchEvents();
-      }
+      //    API CALL: Delete Event
+      await eventsApi.delete(id);
+      
+      setMessage({ type: 'success', text: 'Event deleted' });
+      fetchEvents();
     } catch (err) {
       setMessage({ type: 'danger', text: 'Failed to delete' });
     }
@@ -193,7 +173,6 @@ const AdminPage: React.FC = () => {
     const fullStartTime = `${eventDate} ${startTime}:00`;
     const fullEndTime = `${eventDate} ${endTime}:00`;
 
-    // Validation: Prevent setting "Active" on expired times during update
     if (editingEventId && currentStatus === 'active') {
         if (isTimeInPast(eventDate, endTime)) {
             setMessage({ 
@@ -209,54 +188,38 @@ const AdminPage: React.FC = () => {
     try {
       if (editingEventId) {
         // --- UPDATE ---
-        const res = await fetch(`http://localhost:3000/events/${editingEventId}`, {
-          method: 'PATCH',
-          headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ 
+        //    API CALL: Update Event
+        await eventsApi.update(editingEventId, { 
             name: eventName, 
             description, 
             date: fullDate,
             time_start: fullStartTime, 
             time_end: fullEndTime,
             status: currentStatus 
-          })
         });
-        if (!res.ok) throw new Error("Failed to update");
+
         setMessage({ type: 'success', text: 'Event updated successfully!' });
         setEditingEventId(null);
       } else {
         // --- CREATE ---
-        const eventRes = await fetch('http://localhost:3000/events', {
-          method: 'POST',
-          headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ name: eventName, description, date: fullDate })
+        //    API CALL: Create Event
+        const eventData = await eventsApi.create({ 
+            name: eventName, 
+            description, 
+            date: fullDate 
         });
-        if (!eventRes.ok) throw new Error("Failed to create event");
-        const eventData = await eventRes.json();
         
-        // Create Slots
+        // Create Slots (Looping through floors)
         const slotPromises: Promise<any>[] = [];
         floors.forEach(floor => {
           for (let i = 1; i <= floor.counterCount; i++) {
-            slotPromises.push(fetch(`http://localhost:3000/events/${eventData.event_id}/slots`, {
-              method: 'POST',
-              headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
+            //    API CALL: Create Slots
+            slotPromises.push(eventsApi.createSlots(eventData.event_id, {
                 floor: floor.floorName,
                 counter: i,
                 capacity: floor.capacityPerCounter,
                 time_start: fullStartTime,
                 time_end: fullEndTime
-              })
             }));
           }
         });

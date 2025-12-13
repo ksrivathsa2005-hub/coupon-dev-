@@ -4,6 +4,7 @@ import type { EventData } from '../components/EventCard';
 import QRCodeModal from '../components/QRCodeModal'; 
 import { useAuth } from '../context/AuthContext';
 import { Spinner, Container, Badge } from 'react-bootstrap';
+import { eventsApi, registrationApi } from '../services/api';
 
 interface BackendEvent {
   event_id: number;
@@ -20,34 +21,35 @@ interface BackendEvent {
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  
+  // --- UI State ---
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Modal State
+  // --- Modal State ---
   const [showModal, setShowModal] = useState(false);
   const [qrToken, setQrToken] = useState<string>('');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   
   const selectedEvent = events.find(e => e.id === selectedEventId);
 
-  // Clean Name (Remove "- IIITK")
+  // --- Helpers ---
   const getCleanName = (fullName: string | undefined) => {
     if (!fullName) return "Student";
     return fullName.split('-')[0].trim();
   };
 
-  //Date for Display
   const todayDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
+  // --- 1. Fetch Events (Using Service) ---
   const fetchEvents = useCallback(async () => {
     if (!user) return;
     try {
-      const response = await fetch(`http://localhost:3000/events/active?student_id=${user.user_id}`);      
-      if (!response.ok) throw new Error('Failed to fetch events');
-      const data: BackendEvent[] = await response.json();
+      //    API CALL: Get active events for this student
+      const data: BackendEvent[] = await eventsApi.getActiveForStudent(user.user_id);
 
       const formattedEvents: EventData[] = data.map((item) => {
         let slotInfo = undefined;
@@ -84,35 +86,25 @@ const DashboardPage: React.FC = () => {
     fetchEvents();
   }, [fetchEvents]);
 
+  // --- 2. Handle Get QR (Using Service) ---
   const handleGetQR = async (eventId: string) => {
     if (!user) return;
     setSelectedEventId(eventId);
 
     try {
-      const response = await fetch('http://localhost:3000/registrations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          student_id: user.user_id, 
-          event_id: parseInt(eventId)
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        if (result.isRedeemed) alert("Access Denied: This coupon has already been used.");
-        else alert(result.error || "Registration failed");
-        return;
-      }
+      //    API CALL: Register Student for Event
+      const result = await registrationApi.register(user.user_id, parseInt(eventId));
 
       setQrToken(result.data.qr_token);
       setShowModal(true);
+      
+      // Refresh events to show updated status (e.g., slot info)
       fetchEvents(); 
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("API Error:", err);
-      alert("Something went wrong connecting to the server.");
+      // Backend might return "Redeemed" or "Full" errors
+      alert(err.message || "Registration failed. Please try again.");
     }
   };
 
@@ -122,18 +114,21 @@ const DashboardPage: React.FC = () => {
     setSelectedEventId(null);
   };
 
+  // --- Render Loading ---
   if (loading) return (
     <div className="d-flex justify-content-center align-items-center vh-100">
       <Spinner animation="border" variant="success" />
     </div>
   );
 
+  // --- Render Error ---
   if (error) return <div className="container py-5 text-center text-danger"><h4>{error}</h4></div>;
 
+  // --- Render Dashboard ---
   return (
     <Container className="py-5">
       
-      {/*Welcome Banner*/}
+      {/* Welcome Banner */}
       <div 
         className="p-5 rounded-4 mb-5 shadow-sm text-center text-md-start"
         style={{ 
@@ -149,13 +144,13 @@ const DashboardPage: React.FC = () => {
         </p>
       </div>
 
-      {/*Section Header*/}
+      {/* Section Header */}
       <div className="d-flex align-items-center mb-4">
         <h4 className="fw-bold mb-0 me-3">Available Mess Events</h4>
         <Badge bg="success" pill>{events.length}</Badge>
       </div>
       
-      {/*Events Grid*/}
+      {/* Events Grid */}
       {events.length === 0 ? (
         <div className="text-center py-5 bg-light rounded-3">
           <p className="text-muted mb-0">No active events found for today.</p>
@@ -173,6 +168,7 @@ const DashboardPage: React.FC = () => {
         </div>
       )}
 
+      {/* QR Modal */}
       <QRCodeModal 
         show={showModal}
         onHide={handleCloseModal}

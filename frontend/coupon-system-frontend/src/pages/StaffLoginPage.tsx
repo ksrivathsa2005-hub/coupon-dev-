@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Container, Card, Form, Button, Alert } from "react-bootstrap";
 import { ShieldLock } from "react-bootstrap-icons";
+import { authApi } from '../services/api';
 
 const StaffLoginPage: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -24,22 +25,17 @@ const StaffLoginPage: React.FC = () => {
 
     try {
       setLoading(true);
-      // Use your computer IP if testing on phone, or localhost
-      // const API_URL = "http://192.168.1.5:3000"; 
-      const API_URL = "http://localhost:3000"; 
 
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim(), password }),
+      //    API CALL: Manual Login
+      const data = await authApi.login({ 
+          username: username.trim(), 
+          password 
       });
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Invalid credentials");
-
+      // Login Context (saves token to localStorage & state)
       login(data.token, data.user);
 
+      // Redirect based on Role
       if (data.user.role === 'admin') navigate('/admin');
       else navigate('/staff');
 
@@ -55,6 +51,7 @@ const StaffLoginPage: React.FC = () => {
     <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
       <Card style={{ maxWidth: 480, width: "100%", padding: 32, border: "none", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
         
+        {/* Header */}
         <div className="text-center mb-4">
           <div className="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{ width: 60, height: 60 }}>
             <ShieldLock size={30} />

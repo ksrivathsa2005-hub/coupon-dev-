@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Card, Row, Col, Table, ProgressBar, Spinner, Alert } from 'react-bootstrap';
 import { BarChartFill, PeopleFill, Shop } from 'react-bootstrap-icons';
-import { useAuth } from '../context/AuthContext'; // Import useAuth to get the token
+// 👇 Import the Service Layer
+import { eventsApi } from '../services/api';
 
 interface EventStatsModalProps {
   show: boolean;
@@ -17,7 +18,6 @@ interface EventStats {
 }
 
 const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId, eventName }) => {
-  const { token } = useAuth(); // Get the token
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<EventStats | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,15 +33,11 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
     setError(null);
     setStats(null);
     try {
-      // 🔐 Add Authorization Header
-      const res = await fetch(`http://localhost:3000/events/${eventId}/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      if (!eventId) return;
+
+      // ✅ API CALL: Use the service layer (uses the correct VITE_API_URL)
+      const data = await eventsApi.getStats(eventId);
       
-      if (!res.ok) throw new Error('Failed to fetch stats');
-      const data = await res.json();
       setStats(data);
     } catch (err) {
       console.error(err);

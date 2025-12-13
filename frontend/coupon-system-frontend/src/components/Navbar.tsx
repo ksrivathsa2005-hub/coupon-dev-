@@ -19,7 +19,6 @@ const AppNavbar: React.FC = () => {
     return fullName.split('-')[0].trim();
   };
 
-  // 🧠 SMART ROUTING: Decide where the Logo clicks should go
   const getHomeRoute = () => {
     if (!isAuthenticated || !user) return "/login";
     if (user.role === 'admin') return "/admin";
@@ -106,7 +105,7 @@ const AppNavbar: React.FC = () => {
             </Dropdown>
           ) : (
             // --- LOGGED OUT STATE ---
-            // 👇 UPDATE: Hide button if on ANY login-related page
+            //    UPDATE: Hide button if on ANY login-related page
             !['/login', '/staff-access'].includes(location.pathname) && (
               <Link to="/login">
                 <Button 

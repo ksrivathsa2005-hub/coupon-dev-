@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-
 import { GoogleLogin } from '@react-oauth/google';
-import type { CredentialResponse } from '@react-oauth/google'; import { useAuth } from '../context/AuthContext'; 
+import type { CredentialResponse } from '@react-oauth/google';
+import { useAuth } from '../context/AuthContext'; 
 import { useNavigate } from 'react-router-dom';
 import { Container, Card } from 'react-bootstrap';
+import { authApi } from '../services/api';
 
 const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
@@ -15,23 +16,15 @@ const LoginPage: React.FC = () => {
       const { credential } = credentialResponse;
       if (!credential) return;
 
-      // Use your computer's IP if testing on phone, otherwise localhost
-      const API_URL = "http://localhost:3000"; 
+      //    API CALL: Google Login
+      const data = await authApi.googleLogin(credential);
 
-      const res = await fetch(`${API_URL}/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: credential }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Login failed");
-
+      // Login Context (saves token to localStorage & state)
       login(data.token, data.user);
       
-      // If an admin logs in via Google, send them to admin page, otherwise dashboard
+      // Redirect based on Role
       if (data.user.role === 'admin') navigate('/admin');
+      else if (data.user.role === 'volunteer') navigate('/staff');
       else navigate('/dashboard');
 
     } catch (err: any) {
@@ -44,9 +37,8 @@ const LoginPage: React.FC = () => {
     <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
       <Card style={{ maxWidth: 480, width: "100%", padding: 32, border: "none", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
         
-        {/* Header Section with New Logo and Name */}
+        {/* Header Section with Logo and Name */}
         <div className="text-center mb-4">
-           {/* Assuming your logo is at public/klee-logo.png */}
            <img 
             src="/klee-logo.png" 
             alt="Klee Logo" 
@@ -78,7 +70,7 @@ const LoginPage: React.FC = () => {
           Only <strong>@iiitkottayam.ac.in</strong> accounts are allowed
         </div>
         
-        {/* Hidden Staff Link */}
+        {/* Hidden Staff Link (Bottom Dot) */}
         <div className="mt-5 text-center">
             <a href="/staff-access" style={{ fontSize: '10px', color: '#eee', textDecoration: 'none' }}>.</a>
         </div>
