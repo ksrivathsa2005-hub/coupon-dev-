@@ -33,27 +33,11 @@ const extractBatch = (email) => {
         return null;
     }
 };
-
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        // 1. Check for HARDCODED Admin (Keep this for safety/backup)
-        if (username === 'admin' && password === 'admin123') {
-            const appToken = jwt.sign(
-                { user_id: 999, role: 'admin', name: 'Super Admin', email: 'admin@system' },
-                JWT_SECRET,
-                { expiresIn: '12h' }
-            );
-            return res.json({
-                message: "Admin login successful",
-                token: appToken,
-                user: { user_id: 999, name: 'Super Admin', role: 'admin' }
-            });
-        }
-
-        // 2. CHECK DATABASE (For Volunteers/Staff)
-        // We check if the 'email' matches the username provided (e.g., 'f1c1')
+        // Query database using email field (since username column doesn't exist)
         const result = await db.query(
             'SELECT * FROM users WHERE email = $1', 
             [username]
@@ -62,10 +46,8 @@ router.post('/login', async (req, res) => {
         if (result.rows.length > 0) {
             const user = result.rows[0];
 
-            // Verify Password (In production, use bcrypt.compare)
-            // For now, we do a direct string comparison
+            // Check if password matches
             if (user.password === password) {
-                
                 const appToken = jwt.sign(
                     { 
                         user_id: user.user_id, 
@@ -88,7 +70,7 @@ router.post('/login', async (req, res) => {
                 });
             }
         }
-        
+
         return res.status(401).json({ error: "Invalid credentials" });
 
     } catch (err) {
