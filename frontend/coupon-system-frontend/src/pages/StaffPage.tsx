@@ -1,16 +1,52 @@
-import React, { useState } from 'react';
-import { Container, Row, Col, Card, Button, Spinner } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Button, Spinner, Badge, ListGroup } from 'react-bootstrap';
 import { QrScanner } from '../components/QrScanner';
 import { useAuth } from '../context/AuthContext';
 import ScanResult from '../components/ScanResult';
+// 1. Import the new Modal
+import VolunteerStatsModal from '../components/VolunteerStatsModal'; 
+import { CalendarEvent, ChevronRight } from 'react-bootstrap-icons';
+
+// Define Event Interface locally if not imported
+interface EventData {
+    event_id: number;
+    name: string;
+    date: string;
+    status: string;
+}
 
 export const StaffPage = () => {
   const { user } = useAuth();
   
   const [showScanner, setShowScanner] = useState(false);
   const [loading, setLoading] = useState(false);
-  
   const [scanResult, setScanResult] = useState<{ status: 'success' | 'error' | 'warning', message: string, studentId?: string } | null>(null);
+
+  // --- NEW: Analytics State ---
+  const [events, setEvents] = useState<EventData[]>([]);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<{id: number, name: string} | null>(null);
+
+  // Fetch Active Events on Load
+  useEffect(() => {
+    const fetchEvents = async () => {
+        try {
+            const res = await fetch('http://localhost:3000/events');
+            if(res.ok) {
+                const data = await res.json();
+                // Filter only ACTIVE events for the volunteer to see
+                setEvents(data.filter((e: EventData) => e.status === 'active'));
+            }
+        } catch(err) { console.error(err); }
+    };
+    fetchEvents();
+  }, []);
+
+  const handleOpenStats = (event: EventData) => {
+      setSelectedEvent({ id: event.event_id, name: event.name });
+      setShowStatsModal(true);
+  };
+  // ---------------------------
 
   const handleScanSuccess = async (decodedText: string) => {
     setShowScanner(false);
@@ -30,17 +66,12 @@ export const StaffPage = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // SUCCESS (Green)
         setScanResult({
             status: 'success',
             message: 'Coupon Verified. You can serve the food.',
-            // Removed studentId from here as requested
         });
       } else {
-        // FAILURE (Red or Yellow)
         const errorMessage = data.error || 'Invalid Token';
-        
-        // Check if the message indicates "Already Served"
         const isWarning = errorMessage.toLowerCase().includes("already served");
 
         setScanResult({
@@ -62,7 +93,6 @@ export const StaffPage = () => {
     setShowScanner(true);
   };
 
-  // --- CONDITIONAL RENDER: SHOW RESULT PAGE ---
   if (scanResult) {
     let title = 'Scan Failed';
     if (scanResult.status === 'success') title = 'Scan Successful!';
@@ -73,7 +103,6 @@ export const StaffPage = () => {
         result={{
           status: scanResult.status,
           title: title,
-          // Only append Student ID if it exists (which now only happens for errors/warnings if backend sends it, or never)
           message: scanResult.studentId 
             ? `${scanResult.message} (${scanResult.studentId})` 
             : scanResult.message
@@ -83,7 +112,6 @@ export const StaffPage = () => {
     );
   }
 
-  // --- STANDARD UI ---
   return (
     <Container className="py-5">
       <div className="text-center mb-5">
@@ -96,7 +124,7 @@ export const StaffPage = () => {
           
           {/* INITIAL STATE */}
           {!showScanner && !loading && (
-            <Card className="text-center p-5 shadow-sm border-0">
+            <Card className="text-center p-5 shadow-sm border-0 mb-5">
               <div className="mb-3 text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
                   <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
@@ -117,10 +145,10 @@ export const StaffPage = () => {
                 <p className="mt-3 text-muted fw-bold">Verifying Coupon...</p>
             </div>
           )}
-    
+
           {/* SCANNER STATE */}
           {showScanner && (
-            <Card className="shadow-lg border-0 overflow-hidden">
+            <Card className="shadow-lg border-0 overflow-hidden mb-5">
               <Card.Header className="bg-dark text-white text-center py-3 d-flex justify-content-between align-items-center">
                 <span className="fw-bold">Scanning...</span>
                 <Button variant="outline-light" size="sm" onClick={() => setShowScanner(false)}>Close</Button>
@@ -133,8 +161,49 @@ export const StaffPage = () => {
             </Card>
           )}
 
+          {/* --- NEW: ANALYTICS SECTION --- */}
+          {!showScanner && !loading && (
+             <div className="mt-4">
+                 <h5 className="fw-bold mb-3 text-muted border-bottom pb-2">Your Analytics</h5>
+                 {events.length === 0 ? (
+                     <p className="text-muted small">No active events found.</p>
+                 ) : (
+                     <ListGroup variant="flush" className="shadow-sm rounded overflow-hidden">
+                         {events.map(event => (
+                             <ListGroup.Item 
+                                key={event.event_id} 
+                                action 
+                                onClick={() => handleOpenStats(event)}
+                                className="d-flex justify-content-between align-items-center py-3"
+                             >
+                                 <div className="d-flex align-items-center">
+                                     <div className="bg-light rounded-circle p-2 me-3 text-primary">
+                                         <CalendarEvent />
+                                     </div>
+                                     <div>
+                                         <div className="fw-bold text-dark">{event.name}</div>
+                                         <div className="small text-muted">Tap to view your stats</div>
+                                     </div>
+                                 </div>
+                                 <ChevronRight className="text-muted" />
+                             </ListGroup.Item>
+                         ))}
+                     </ListGroup>
+                 )}
+             </div>
+          )}
+
         </Col>
       </Row>
+      
+      {/* STATS MODAL */}
+      <VolunteerStatsModal 
+        show={showStatsModal} 
+        onHide={() => setShowStatsModal(false)} 
+        eventId={selectedEvent?.id || null}
+        eventName={selectedEvent?.name || ''}
+      />
+
     </Container>
   );
 };
