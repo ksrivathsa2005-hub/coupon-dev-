@@ -187,6 +187,40 @@ router.get('/:id/stats', async (req, res) => {
     }
 });
 
+// GET STATS FOR A SPECIFIC VOLUNTEER (Counter)
+router.get('/:id/stats/volunteer/:vid', async (req, res) => {
+    const { id, vid } = req.params;
+    try {
+        // 1. Total Served by THIS Volunteer
+        const totalReq = await db.query(`
+            SELECT COUNT(*) 
+            FROM volunteer_actions va
+            JOIN registrations r ON va.registration_id = r.registration_id
+            WHERE r.event_id = $1 AND va.volunteer_id = $2
+        `, [id, vid]);
+
+        // 2. Batch Breakdown for THIS Volunteer
+        const batchReq = await db.query(`
+            SELECT u.batch, COUNT(*) as count
+            FROM volunteer_actions va
+            JOIN registrations r ON va.registration_id = r.registration_id
+            JOIN users u ON r.student_id = u.user_id
+            WHERE r.event_id = $1 AND va.volunteer_id = $2
+            GROUP BY u.batch
+            ORDER BY u.batch ASC
+        `, [id, vid]);
+
+        res.json({
+            total: parseInt(totalReq.rows[0].count),
+            byBatch: batchReq.rows
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error fetching volunteer stats" });
+    }
+});
+
 // routes/events.js
 
 router.get('/active', async (req, res) => {
