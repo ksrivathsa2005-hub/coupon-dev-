@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { useEffect, useRef, useState } from 'react';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Spinner, Alert, Button } from 'react-bootstrap';
 
 interface QrScannerProps {
   onScanSuccess: (decodedText: string) => void;
@@ -9,68 +10,105 @@ interface QrScannerProps {
 const scannerRegionId = 'qr-scanner-region';
 
 export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [hasPermission, setHasPermission] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
 
   useEffect(() => {
-    const container = document.getElementById(scannerRegionId);
-    if (container) {
-      container.innerHTML = "";
-    }
+    // 1. Initialize the Core Scanner
+    const html5QrCode = new Html5Qrcode(scannerRegionId, {
+        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
+        verbose: false
+    });
+    
+    scannerRef.current = html5QrCode;
 
-    const config = {
-      fps: 10,
-      qrbox: { width: 250, height: 250 },
-      rememberLastUsedCamera: true,
-      showTorchButtonIfSupported: true,
-      showZoomSliderIfSupported: true,
-      videoConstraints: {
-        facingMode: { ideal: "environment" }, // Prefer back camera, but don't crash if missing
-        // iOS Safari prefers these standard resolutions
-        width: { min: 640, ideal: 1280, max: 1920 },
-        height: { min: 480, ideal: 720, max: 1080 },
+    const startScanner = async () => {
+      try {
+        // 2. Start Camera Automatically
+        await html5QrCode.start(
+          { facingMode: "environment" }, 
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+          },
+          (decodedText) => {
+            // Success Callback
+            // We pause immediately to stop multiple scans of the same code
+            html5QrCode.pause();
+            onScanSuccess(decodedText);
+          },
+          (errorMessage) => {
+            // Error Callback (Scanning...)
+          }
+        );
+        setHasPermission(true);
+      } catch (err: any) {
+        console.error("Camera Start Error:", err);
+        setStartError("Camera permission denied or camera not found.");
+        if (onScanFailure) onScanFailure(err.message);
       }
     };
 
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      scannerRegionId,
-      config,
-      false
-    );
-    scannerRef.current = html5QrcodeScanner;
+    // Kick off the start process
+    startScanner();
 
-    const handleSuccess = (decodedText: string) => {
-      // Clear scanner immediately to prevent duplicate scans
-      html5QrcodeScanner.clear();
-      onScanSuccess(decodedText);
-    };
-
-    const handleError = (errorMessage: string) => {
-      // Filter out common "scanning..." errors to keep logs clean
-      if (onScanFailure && !errorMessage.includes('No MultiFormat Readers') && !errorMessage.includes('NotFoundException')) {
-        onScanFailure(errorMessage);
-      }
-    };
-
-    html5QrcodeScanner.render(handleSuccess, handleError);
-
-    // Cleanup function
+    // 3. Cleanup on Unmount
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch((error) => console.error('Failed to clear scanner', error));
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().then(() => {
+            scannerRef.current?.clear();
+        }).catch(err => console.error("Stop failed", err));
       }
     };
-  }, [onScanSuccess, onScanFailure]);
+  }, []); // Run once on mount
+
+  const handleRetry = () => {
+     if (scannerRef.current && scannerRef.current.isScanning === false) {
+         scannerRef.current.resume();
+     } else {
+         window.location.reload(); 
+     }
+  }
 
   return (
-    <div className="qr-scanner-container">
-      <div id={scannerRegionId} className="qr-scanner-region" />
+    <div className="qr-scanner-container position-relative bg-black rounded-3 overflow-hidden" style={{ minHeight: '300px' }}>
+      
+      {/* The actual video element container */}
+      <div id={scannerRegionId} className="w-100 h-100" />
+
+      {/* Loading Overlay */}
+      {!hasPermission && !startError && (
+        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-white bg-dark">
+            <Spinner animation="border" variant="light" className="mb-3"/>
+            <p>Starting Camera...</p>
+        </div>
+      )}
+
+      {/* Error Overlay */}
+      {startError && (
+          <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-dark p-4 text-center">
+              <Alert variant="danger">{startError}</Alert>
+              <Button variant="light" size="sm" onClick={handleRetry}>Try Again</Button>
+          </div>
+      )}
+
+      {/* Guide Box */}
+      {hasPermission && (
+          <div className="position-absolute top-50 start-50 translate-middle pointer-events-none" 
+               style={{ 
+                   width: '250px', 
+                   height: '250px', 
+                   border: '2px solid rgba(255,255,255,0.6)', 
+                   borderRadius: '12px',
+                   boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'
+               }}>
+          </div>
+      )}
+      
       <style>{`
-        .qr-scanner-container { width: 100%; max-width: 600px; margin: 0 auto; }
-        .qr-scanner-region { border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        /* iOS Fix: Ensure video fits container properly */
-        #qr-scanner-region video { border-radius: 8px; width: 100% !important; object-fit: cover; }
-        #qr-scanner-region__dashboard { background-color: #f8f9fa !important; padding: 1rem !important; }
-        #qr-scanner-region__dashboard_section_csr button { background-color: #0d6efd !important; color: white !important; border: none !important; border-radius: 6px !important; padding: 0.5rem 1rem !important; }
+        #qr-scanner-region video { object-fit: cover; width: 100% !important; height: 100% !important; }
       `}</style>
     </div>
   );
